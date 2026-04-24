@@ -1,0 +1,19 @@
+/* Design Tokens for PokeWatch */
+
+:root {
+  /* Colors — Tailwind palettes */
+  --color-primary: #0ea5e9;       /* sky-500 */
+  --color-primary-dark: #0284c7;  /* sky-600 */
+  --color-secondary: #f43f5e;     /* rose-500 */
+  --color-secondary-dark: #e11d48;/* rose-600 */
+  --color-neutral-50: #fafafa;    /* zinc-50 */
+  --color-neutral-100: #f4f4f5;   /* zinc-100 */
+  --color-neutral-500: #71717a;   /* zinc-500 */
+  --color-neutral-900: #18181b;   /* zinc-900 */
+  --color-neutral-950: #09090b;   /* zinc-950 */
+
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
