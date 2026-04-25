@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 interface IncomingArticle {
   id: string
@@ -74,12 +74,12 @@ Exemples de titres de section français :
 
 Aucun texte hors du bloc JSON.`
 
-function getAnthropicClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+function getGeminiClient(): GoogleGenerativeAI {
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is not configured on the server')
+    throw new Error('GEMINI_API_KEY is not configured on the server')
   }
-  return new Anthropic({ apiKey })
+  return new GoogleGenerativeAI(apiKey)
 }
 
 function formatArticlesForUser(articles: IncomingArticle[]): string {
@@ -120,7 +120,7 @@ function extractJsonBlock(text: string): string | null {
   return text.slice(firstBrace, lastBrace + 1).trim()
 }
 
-interface ClaudeNewsletterItem {
+interface GeneratedItem {
   title: string
   description: string
   bullets: string[]
@@ -130,15 +130,15 @@ interface ClaudeNewsletterItem {
   sourceArticleId: string
 }
 
-interface ClaudeNewsletterSection {
+interface GeneratedSection {
   title: string
   tag: string
-  items: ClaudeNewsletterItem[]
+  items: GeneratedItem[]
 }
 
-interface ClaudeNewsletterPayload {
+interface GeneratedPayload {
   title: string
-  sections: ClaudeNewsletterSection[]
+  sections: GeneratedSection[]
 }
 
 const VALID_TAGS = new Set([
@@ -151,7 +151,7 @@ const VALID_TAGS = new Set([
   'misc',
 ])
 
-function buildNewsletter(payload: ClaudeNewsletterPayload) {
+function buildNewsletter(payload: GeneratedPayload) {
   const generatedAt = new Date().toISOString()
   const newsletterId = `newsletter-${Date.now().toString(36)}`
   return {
@@ -208,55 +208,51 @@ export default async function handler(
   }
 
   try {
-    const client = getAnthropicClient()
+    const genAI = getGeminiClient()
+    const modelName = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash-exp'
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 8000,
+        responseMimeType: 'text/plain',
+      },
+    })
+
+    send('start', { model: modelName, articleCount: body.articles.length })
+
     const userPrompt = formatArticlesForUser(body.articles)
-    const model = process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6'
-
-    send('start', { model, articleCount: body.articles.length })
-
-    const stream = client.messages.stream({
-      model,
-      max_tokens: 8000,
-      system: [
-        {
-          type: 'text',
-          text: SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages: [{ role: 'user', content: userPrompt }],
+    const result = await model.generateContentStream({
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
     })
 
     let fullText = ''
     let charsSinceLastFlush = 0
 
-    for await (const event of stream) {
-      if (
-        event.type === 'content_block_delta' &&
-        event.delta.type === 'text_delta'
-      ) {
-        const chunk = event.delta.text
-        fullText += chunk
-        charsSinceLastFlush += chunk.length
-        if (charsSinceLastFlush >= 32) {
-          send('progress', { chars: fullText.length })
-          charsSinceLastFlush = 0
-        }
+    for await (const chunk of result.stream) {
+      const text = chunk.text()
+      if (!text) continue
+      fullText += text
+      charsSinceLastFlush += text.length
+      if (charsSinceLastFlush >= 32) {
+        send('progress', { chars: fullText.length })
+        charsSinceLastFlush = 0
       }
     }
 
-    const finalMessage = await stream.finalMessage()
+    const finalResponse = await result.response
     const jsonRaw = extractJsonBlock(fullText)
     if (!jsonRaw) {
       send('error', {
-        message: 'Could not extract JSON from Claude output',
+        message: 'Could not extract JSON from Gemini output',
         raw: fullText.slice(0, 500),
       })
       res.end()
       return
     }
 
-    let parsed: ClaudeNewsletterPayload
+    let parsed: GeneratedPayload
     try {
       parsed = JSON.parse(jsonRaw)
     } catch (e) {
@@ -269,18 +265,14 @@ export default async function handler(
     }
 
     const newsletter = buildNewsletter(parsed)
+    const usageMeta = finalResponse.usageMetadata
 
     send('complete', {
       newsletter,
       usage: {
-        inputTokens: finalMessage.usage.input_tokens,
-        outputTokens: finalMessage.usage.output_tokens,
-        cacheCreationInputTokens:
-          (finalMessage.usage as { cache_creation_input_tokens?: number })
-            .cache_creation_input_tokens ?? 0,
-        cacheReadInputTokens:
-          (finalMessage.usage as { cache_read_input_tokens?: number })
-            .cache_read_input_tokens ?? 0,
+        promptTokens: usageMeta?.promptTokenCount ?? 0,
+        outputTokens: usageMeta?.candidatesTokenCount ?? 0,
+        totalTokens: usageMeta?.totalTokenCount ?? 0,
       },
     })
     res.end()

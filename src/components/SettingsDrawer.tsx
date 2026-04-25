@@ -100,7 +100,7 @@ export function SettingsDrawer({
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-8">
             <section>
               <h3 className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-                Proxy Claude
+                Proxy Gemini
               </h3>
               <div className="mt-2 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 flex items-center gap-3">
                 {healthStatus === 'ok' ? (
@@ -136,7 +136,7 @@ export function SettingsDrawer({
               </div>
               {healthStatus === 'missing-key' && (
                 <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">
-                  Définis <code className="font-mono">ANTHROPIC_API_KEY</code> dans les variables
+                  Définis <code className="font-mono">GEMINI_API_KEY</code> dans les variables
                   d'environnement Vercel ou dans <code className="font-mono">.env</code> en local.
                 </p>
               )}

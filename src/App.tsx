@@ -4,7 +4,7 @@ import { Workspace } from './sections/workspace/components/Workspace'
 import { SettingsDrawer, type HealthStatus } from './components/SettingsDrawer'
 import { useWorkspace } from './lib/useWorkspace'
 import { fetchAllArticles } from './lib/rss-fetch'
-import { generateNewsletter } from './lib/claude-generate'
+import { generateNewsletter } from './lib/generate'
 import { clearAllStorage } from './lib/storage'
 import { copyHtmlToClipboard, copyMarkdownToClipboard } from './lib/serialize'
 import {

@@ -1,16 +1,17 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
 export default function handler(_req: IncomingMessage, res: ServerResponse) {
-  const hasKey = Boolean(process.env.ANTHROPIC_API_KEY)
-  const model = process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6'
+  const hasKey = Boolean(process.env.GEMINI_API_KEY)
+  const model = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash-exp'
 
   res.statusCode = hasKey ? 200 : 503
   res.setHeader('content-type', 'application/json')
   res.end(
     JSON.stringify({
       status: hasKey ? 'ok' : 'missing-key',
+      provider: 'gemini',
       model,
-      hasAnthropicKey: hasKey,
+      hasGeminiKey: hasKey,
     }),
   )
 }

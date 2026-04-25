@@ -22,7 +22,7 @@ export async function generateNewsletter(
   let errorMessage: string | null = null
 
   await streamSse(
-    '/api/claude',
+    '/api/generate',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

@@ -1,14 +1,16 @@
 # PokeWatch
 
-Webapp single-screen : flux RSS Pokémon → newsletter générée par Claude. Édition inline, copie markdown ou HTML rich.
+Webapp single-screen : flux RSS Pokémon → newsletter générée par Google Gemini. Édition inline, copie markdown ou HTML rich.
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env   # ajoute ton ANTHROPIC_API_KEY
+cp .env.example .env   # ajoute ton GEMINI_API_KEY
 npm run dev            # http://localhost:3000
 ```
+
+Get your free Gemini API key at https://aistudio.google.com/apikey.
 
 ## Scripts
 
@@ -19,21 +21,21 @@ npm run dev            # http://localhost:3000
 
 ## Stack
 
-React 19 · Vite · Tailwind v4 · Tiptap · @dnd-kit · Vercel functions Node 20 · `claude-sonnet-4-6` (prompt caching)
+React 19 · Vite · Tailwind v4 · Tiptap · @dnd-kit · Vercel functions Node 20 · `gemini-2.0-flash-exp` (free tier)
 
 ## Deploy Vercel
 
 ```bash
 vercel link
-vercel env add ANTHROPIC_API_KEY
+vercel env add GEMINI_API_KEY
 vercel --prod
 ```
 
-Variables d'env : `ANTHROPIC_API_KEY` (obligatoire), `CLAUDE_MODEL` (optionnel).
+Variables d'env : `GEMINI_API_KEY` (obligatoire), `GEMINI_MODEL` (optionnel, défaut `gemini-2.0-flash-exp`).
 
 ## Architecture
 
-- `api/` — fonctions serverless : `health`, `rss`, `claude` (SSE streaming)
+- `api/` — fonctions serverless : `health`, `rss`, `generate` (SSE streaming)
 - `src/App.tsx` — câblage shell + workspace + drawer + reducer
 - `src/lib/` — reducer, hooks, fetch, serialize
 - `src/shell/` — header, theme toggle, user menu

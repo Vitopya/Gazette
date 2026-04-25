@@ -59,9 +59,9 @@ export function buildInitialOnboarding(): OnboardingState {
     steps: [
       {
         key: 'api-key',
-        title: 'Activer le proxy Claude',
+        title: 'Activer le proxy Gemini',
         description:
-          "Vérifie que la variable d'environnement ANTHROPIC_API_KEY est configurée côté serveur.",
+          "Vérifie que la variable d'environnement GEMINI_API_KEY est configurée côté serveur.",
         completed: false,
       },
       {
